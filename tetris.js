@@ -28,8 +28,6 @@ function sleep(ms) {
 
 function makeViewport() {
 
-
-
 	var p = document.getElementById("parentsvg");
 	p.setAttribute("width", SCREENSIZE_PX + "px");
 	p.setAttribute("height", SCREENSIZE_PX + "px");
@@ -43,24 +41,45 @@ function makeViewport() {
 	fullarea.setAttribute("stroke-width", "3px");
 	p.appendChild(fullarea);
 
-	var bkg = document.createElementNS(XMLNS, "rect");
-	bkg.setAttribute("height", (VIEWPORTHEIGHT_BLOCKS * BLOCKSIZE_PX + 4) + "px");
-	bkg.setAttribute("width", (VIEWPORTWIDTH_BLOCKS * BLOCKSIZE_PX + 4) + "px");
-	bkg.setAttribute("x", (SCREENSIZE_PX/2 - getSVGNumber(bkg, "width")/2) + "px");
-	bkg.setAttribute("y", (SCREENSIZE_PX/2 - getSVGNumber(bkg, "height")/2) + "px");
+	var vp_pad = 2;
+	var vp_lower_spacing = 20;
 
-	p.appendChild(bkg);
+	var platform_string;
+	if (ISMOBILE) {
+		platform_string = "Mobile";
+	}
+	else {
+		platform_string = "Desktop";
+	}
+
+	var titletxt = "Web Tetris: " + platform_string + " Version";
 
 	var vp = document.createElementNS(XMLNS, "rect");
 	vp.setAttribute("id", "viewport");
 	vp.setAttribute("height", (VIEWPORTHEIGHT_BLOCKS * BLOCKSIZE_PX) + "px");
 	vp.setAttribute("width", (VIEWPORTWIDTH_BLOCKS * BLOCKSIZE_PX) + "px");
 	vp.setAttribute("x", (SCREENSIZE_PX/2 - getSVGNumber(vp, "width")/2) + "px");
-	vp.setAttribute("y", (SCREENSIZE_PX/2 - getSVGNumber(vp, "height")/2) + "px");
+	vp.setAttribute("y", (SCREENSIZE_PX - getSVGNumber(vp, "height") - vp_lower_spacing) + "px");
+	console.log(vp.getAttribute("y"));
 	vp.setAttribute("fill", "gray");
-	// vp.setAttribute("stroke", "black");
-	// vp.setAttribute("stroke-width", "2px");
-	
+
+	var bkg = document.createElementNS(XMLNS, "rect");
+	bkg.setAttribute("height", (getSVGNumber(vp, "height") + 2*vp_pad) + "px");
+	bkg.setAttribute("width", (getSVGNumber(vp, "width") + 2*vp_pad) + "px");
+	bkg.setAttribute("x", (getSVGNumber(vp, "x") - vp_pad) + "px");
+	bkg.setAttribute("y", ((getSVGNumber(vp, "y") - vp_pad)) + "px");
+
+	var title = document.createElementNS(XMLNS, "text");
+	title.setAttribute("text-anchor", "middle");
+	title.setAttribute("alignment-baseline", "middle");
+	title.innerHTML = titletxt;
+	title.setAttribute("font-size", "20pt");
+	title.setAttribute("font-family", "monospace");
+	title.setAttribute("x", (SCREENSIZE_PX/2) + "px");
+	title.setAttribute("y", (getSVGNumber(vp, "y")/2) + "px");
+
+	p.appendChild(title);
+	p.appendChild(bkg);
 	p.appendChild(vp);
 
 	var prevwidth_blocks = 4.5;
