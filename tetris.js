@@ -202,7 +202,13 @@ class TetrisGame {
 		var timerT = 1000; // ms
 		window.game = this;
 
-		window.onkeydown = this.checkKey;
+		if (!ISMOBILE) {
+			window.onkeydown = this.checkKey;
+		}
+		else {
+			window.addEventListener("touchstart", this.handleTouchStart);
+			window.addEventListener("touchend", this.handleTouchEnd);
+		}
 		this.addShape();
 
 		this.timer = setInterval(this.timerFunction, timerT);
@@ -331,6 +337,29 @@ class TetrisGame {
 		}
 	}
 
+	handleTouchStart(e) {
+		// console.log("Touch start at (" + e.pageX + ", " + e.pageY + ")");
+		this.touchstartlocation = [e.pageX, e.pageY];
+	}
+
+	handleTouchEnd(e) {
+		// console.log("Touch end at (" + e.pageX + ", " + e.pageY + ")");
+		var dX = e.pageX - this.touchstartlocation[0];
+		var dY = e.pageY - this.touchstartlocation[1];
+
+		var rawatan = Math.atan(-dY/dX) * 180 / Math.PI;
+		var angle;
+
+		if (dX > 0) {
+			angle = (rawatan + 360) % 360;
+		}
+		else {
+			angle = rawatan + 180;
+		}
+
+		console.log("Swipe at: " + angle);
+	}
+
 	isBlocked(newboxes) {
 		var xout = newboxes.some(d => d[0] < 1 || d[0] > VIEWPORTWIDTH_BLOCKS);
 		var yout = newboxes.some(d => d[1] < 1 || d[1] > VIEWPORTHEIGHT_BLOCKS);
@@ -397,7 +426,7 @@ class TetrisGame {
 		rows.reverse();
 
 		this.rowsToRemove = rows.filter(r => this.rowFilled(r));
-		console.log(this.rowsToRemove);
+		// console.log(this.rowsToRemove);
 		var boxelems = [...this.parent.getElementsByClassName("box")];
 
 		var boxesToRemove, boxesAbove, r;
