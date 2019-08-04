@@ -60,7 +60,7 @@ function makeViewport() {
 	vp.setAttribute("width", (VIEWPORTWIDTH_BLOCKS * BLOCKSIZE_PX) + "px");
 	vp.setAttribute("x", (SCREENSIZE_PX/2 - getSVGNumber(vp, "width")/2) + "px");
 	vp.setAttribute("y", (SCREENSIZE_PX - getSVGNumber(vp, "height") - vp_lower_spacing) + "px");
-	console.log(vp.getAttribute("y"));
+	// console.log(vp.getAttribute("y"));
 	vp.setAttribute("fill", "gray");
 
 	var bkg = document.createElementNS(XMLNS, "rect");
@@ -100,7 +100,17 @@ function makeViewport() {
 	preview.setAttribute("stroke", "black");
 	preview.setAttribute("stroke-width", "2px");
 
+	var prevtitle = document.createElementNS(XMLNS, "text");
+	prevtitle.setAttribute("text-anchor", "middle");
+	prevtitle.setAttribute("alignment-baseline", "bottom");
+	prevtitle.innerHTML = "On Deck:";
+	prevtitle.setAttribute("font-size", "16pt");
+	prevtitle.setAttribute("font-family", "monospace");
+	prevtitle.setAttribute("x", prevx + "px");
+	prevtitle.setAttribute("y", (getSVGNumber(preview, "y") - 10) + "px");
+
 	prevg.appendChild(preview);
+	prevg.appendChild(prevtitle);
 	p.appendChild(prevg);
 
 }
@@ -265,7 +275,9 @@ class TetrisGame {
 	checkKey(e) { // note that "this" in this function is the caller
 		e = e || window.event; // catch undefined
 
-		console.log(new Error().stack);
+		console.log(e.detail);
+
+		// console.log(new Error().stack);
 
 		var d, trial;
 
@@ -281,8 +293,6 @@ class TetrisGame {
 					case "KeyA":
 						d = "left";
 						break;
-					case "ArrowUp":
-					case "KeyW":
 					case "Space":
 						game.hardDrop();
 						break;
@@ -299,7 +309,9 @@ class TetrisGame {
 						d = "ccw";
 						break;
 					case "ShiftRight":
+					case "KeyW":
 					case "KeyE":
+					case "ArrowUp":
 						d = "cw";
 						break;
 					case "Escape":
@@ -382,20 +394,23 @@ class TetrisGame {
 		// var used = this.getUsedSpaces();
 		var rows = [...Array(VIEWPORTHEIGHT_BLOCKS).keys()].map(d => d+1);
 
-		var rowsToRemove = rows.filter(r => this.rowFilled(r));
-		// console.log(rowsToRemove);
+		rows.reverse();
+
+		this.rowsToRemove = rows.filter(r => this.rowFilled(r));
+		console.log(this.rowsToRemove);
 		var boxelems = [...this.parent.getElementsByClassName("box")];
 
 		var boxesToRemove, boxesAbove, r;
 		// must go from lowest to highest # row or row #s will change
-		for (var i = 0; i < rowsToRemove.length; i++) {
-			r = rowsToRemove[i];
+		while (this.rowsToRemove.length > 0) {
+			r = this.rowsToRemove.pop();
 			
 			boxesToRemove = boxelems.filter(b => parseInt(b.getAttribute("data-ycoord")) === r);
 			boxesToRemove.map(b => b.setAttribute("fill", "white"));
 			boxesAbove = boxelems.filter(b => parseInt(b.getAttribute("data-ycoord")) < r);
 
-			setTimeout(this.removeanddrop, 250, boxesToRemove, boxesAbove);
+			this.removeanddrop(boxesToRemove, boxesAbove);
+			// setTimeout(this.removeanddrop, 250, boxesToRemove, boxesAbove);
 		}
 
 		
