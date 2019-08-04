@@ -1,63 +1,91 @@
 class Shape {
-	constructor(shapenumber, center) {
+	constructor(shapenumber, forpreview) {
+
+		if (forpreview == undefined) {
+			forpreview = false;
+		}
 
 		this.shapenumber = shapenumber;
 
 		this.rotationstate = 0;
 
-		var shapeinfo = [
-			{"boxes": [[1,1], [2,1], [2,2], [3,2]], "color": "cyan"},
-			{"boxes": [[1,2], [2,2], [2,1], [3,1]], "color": "orange"},
-			{"boxes": [[1,1], [1,2], [2,2], [3,2]], "color": "yellow"},
-			{"boxes": [[1,2], [2,2], [3,2], [3,1]], "color": "fuchsia"},
-			{"boxes": [[1,1], [1,2], [2,1], [2,2]], "color": "lime"},
-			{"boxes": [[1,2], [2,2], [2,1], [3,2]], "color": "blue"},
-			{"boxes": [[1,1], [2,1], [3,1], [4,1]], "color": "red"},
-		];
+		// var shapeinfo = [
+		// 	{"boxes": [[1,1], [2,1], [2,2], [3,2]], "color": "cyan"},
+		// 	{"boxes": [[1,2], [2,2], [2,1], [3,1]], "color": "orange"},
+		// 	{"boxes": [[1,1], [1,2], [2,2], [3,2]], "color": "yellow"},
+		// 	{"boxes": [[1,2], [2,2], [3,2], [3,1]], "color": "fuchsia"},
+		// 	{"boxes": [[1,1], [1,2], [2,1], [2,2]], "color": "lime"},
+		// 	{"boxes": [[1,2], [2,2], [2,1], [3,2]], "color": "blue"},
+		// 	{"boxes": [[1,1], [2,1], [3,1], [4,1]], "color": "red"},
+		// ];
+
+		var shapeinfo = SHAPEINFO;
+
 
 		this.boxes = shapeinfo[shapenumber]["boxes"];
 		var color = shapeinfo[shapenumber]["color"];
 
-		if (center != undefined) {
-			if (center) {
-				var allx = this.boxes.map(d => d[0]);
-				// console.log(allx);
-				var ctrx = Math.floor((Math.max(...allx) + Math.min(...allx))/2);
-				// console.log(ctrx);
-				var shift = Math.round(VIEWPORTWIDTH_BLOCKS/2) - ctrx;
-				// console.log(shift);
-				this.boxes = this.boxes.map(d => [d[0]+shift, d[1]]);
-			}
+		if (!forpreview) {
+			// center shapes to start
+			var allx = this.boxes.map(d => d[0]);
+			// console.log(allx);
+			var ctrx = Math.floor((Math.max(...allx) + Math.min(...allx))/2);
+			// console.log(ctrx);
+			var shift = Math.round(VIEWPORTWIDTH_BLOCKS/2) - ctrx;
+			// console.log(shift);
+			this.boxes = this.boxes.map(d => [d[0]+shift, d[1]]);
 		}
 
 		var edgecolor = "black";
 		var coord, box;
 
 		var p = document.getElementById("parentsvg");
+
+		var prevparent = document.getElementById("previewgroup");
+
 		var idx = p.getElementsByClassName("shape").length;
 
 		this.shapeg = document.createElementNS(XMLNS, "g");
-		this.shapeg.setAttribute("class", "shape");
-		this.shapeg.setAttribute("id", "shape" + idx);
 
+		if (forpreview) {
+			this.shapeg.setAttribute("class", "shapepreview");
+		}
+		else {
+			this.shapeg.setAttribute("class", "shape");
+			this.shapeg.setAttribute("id", "shape" + idx);
+		}
+
+		var boxclass;
+		if (forpreview) {
+			boxclass = "previewbox";
+		}
+		else {
+			boxclass = "box";
+		}
 		for (var i = 0; i < this.boxes.length; i++) {
 			coord = this.boxes[i];
 			box = document.createElementNS(XMLNS, "rect");
-			box.setAttribute("class", "box");
+			box.setAttribute("class", boxclass);
 			box.setAttribute("width", BLOCKSIZE_PX + "px");
 			box.setAttribute("height", BLOCKSIZE_PX + "px");
-			box.setAttribute("x", vpX((coord[0]-1) * BLOCKSIZE_PX) + "px");
-			box.setAttribute("y", vpY((coord[1]-1) * BLOCKSIZE_PX) + "px");
-			box.setAttribute("data-xcoord", coord[0]);
-			box.setAttribute("data-ycoord", coord[1]);
+			if (!forpreview) {
+				box.setAttribute("x", vpX((coord[0]-1) * BLOCKSIZE_PX) + "px");
+				box.setAttribute("y", vpY((coord[1]-1) * BLOCKSIZE_PX) + "px");
+				box.setAttribute("data-xcoord", coord[0]);
+				box.setAttribute("data-ycoord", coord[1]);
+			}
 			box.setAttribute("fill", color);
 			box.setAttribute("stroke-width", "2px");
 			box.setAttribute("stroke", edgecolor);
 			this.shapeg.appendChild(box);
 		}
 
-		this.shapeg.setAttribute("transform", "");
-		p.appendChild(this.shapeg);
+		if (forpreview) {
+			prevparent.appendChild(this.shapeg);
+		}
+		else {
+			p.appendChild(this.shapeg);
+		}
 
 	}
 

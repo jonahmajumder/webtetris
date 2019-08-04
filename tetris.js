@@ -21,7 +21,15 @@ function parseAttr (attrStr) {
 
 }
 
+function sleep(ms) {
+    var st = new Date().getTime();
+    while(new Date().getTime() < st + ms) {};
+}
+
 function makeViewport() {
+
+
+
 	var p = document.getElementById("parentsvg");
 	p.setAttribute("width", SCREENSIZE_PX + "px");
 	p.setAttribute("height", SCREENSIZE_PX + "px");
@@ -55,10 +63,27 @@ function makeViewport() {
 	
 	p.appendChild(vp);
 
-}
+	var prevwidth_blocks = 4.5;
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+	var preview = document.createElementNS(XMLNS, "rect");
+	preview.setAttribute("id", "preview");
+	preview.setAttribute("height", (prevwidth_blocks * BLOCKSIZE_PX) + "px");
+	preview.setAttribute("width", (prevwidth_blocks * BLOCKSIZE_PX) + "px");
+
+	var prevg = document.createElementNS(XMLNS, "g");
+	prevg.setAttribute("id", "previewgroup");
+
+	var prevx = SCREENSIZE_PX * 3/4 + (VIEWPORTWIDTH_BLOCKS * BLOCKSIZE_PX) / 4;
+	// console.log(prevx);
+	preview.setAttribute("x", (prevx - getSVGNumber(preview, "width")/2) + "px");
+	preview.setAttribute("y", (SCREENSIZE_PX/2 - getSVGNumber(preview, "height")/2) + "px");
+	preview.setAttribute("fill", "gray");
+	preview.setAttribute("stroke", "black");
+	preview.setAttribute("stroke-width", "2px");
+
+	prevg.appendChild(preview);
+	p.appendChild(prevg);
+
 }
 
 class TetrisGame {
@@ -68,17 +93,63 @@ class TetrisGame {
 
 		this.shapes = [];
 		this.activeShape = undefined;
+
+		this.active = true;
 	}
 
 	addShape() {
-		var shapenum = Math.floor(Math.random()*7);
-		var s = new Shape(shapenum, true);
+
+		var shapenum;
+		if (this.nextshapenum == undefined) {
+			shapenum = Math.floor(Math.random()*7);
+		}
+		else {
+			shapenum = this.nextshapenum;
+		}
+		this.nextshapenum = Math.floor(Math.random()*7);
+
+		this.setPreview(this.nextshapenum);
+
+		var s = new Shape(shapenum, false);
 		this.activeShape = s;
 		this.shapes.push(s);
 
 		if (this.isBlocked(s.boxes)) {
 			this.gameover();
 		}
+	}
+
+	setPreview(shapenum) {
+		var prevg = document.getElementById("previewgroup");
+		var prevrect = document.getElementById("preview");
+
+		var prevctrx = getSVGNumber(prevrect, "x") + getSVGNumber(prevrect, "width")/2;
+		var prevctry = getSVGNumber(prevrect, "y") + getSVGNumber(prevrect, "height")/2;
+
+		var prevshapeg = prevg.getElementsByClassName("shapepreview");
+
+		// console.log(prevg);
+
+		if (prevshapeg.length > 0) {
+			[...prevshapeg].map(s => s.remove());
+		}
+
+		var shapeobj = new Shape(shapenum, true);
+
+		var xbox = shapeobj.boxes.map(b => b[0]);
+		var ybox = shapeobj.boxes.map(b => b[1]);
+
+		var shapewidth = (Math.max(...xbox) - Math.min(...xbox) + 1) * BLOCKSIZE_PX;
+		var shapehgt = (Math.max(...ybox) - Math.min(...ybox) + 1) * BLOCKSIZE_PX;
+
+		var prevshapex0 = prevctrx - shapewidth/2;
+		var prevshapey0 = prevctry - shapehgt/2;
+
+		var boxobjs = [...shapeobj.shapeg.children];
+
+		shapeobj.boxes.map((b,i) => boxobjs[i].setAttribute("x", (prevshapex0 + (b[0]-1)*BLOCKSIZE_PX) + "px"));
+		shapeobj.boxes.map((b,i) => boxobjs[i].setAttribute("y", (prevshapey0 + (b[1]-1)*BLOCKSIZE_PX) + "px"));		
+
 	}
 
 	getUsedSpaces() {
@@ -92,13 +163,13 @@ class TetrisGame {
 		else {
 			used = boxelems.map(b => [parseInt(b.getAttribute("data-xcoord")), parseInt(b.getAttribute("data-ycoord"))]);
 		}
+		// console.log(boxelems);
 
 		return used;
 	}
 
 	startgame() {
 		// console.log(this.vp);
-
 		var timerT = 1000; // ms
 		window.game = this;
 
@@ -109,8 +180,9 @@ class TetrisGame {
 	}
 
 	gameover() {
+		console.log("Game over called.");
 		clearInterval(this.timer);
-		this.makebanner("Game over.");
+		this.makebanner("Game over.", "red");
 	}
 
 	makebanner(text, color) {
@@ -118,11 +190,9 @@ class TetrisGame {
 			this.banner.remove();
 		}
 
+		var BANNER_PAD = 10;
+
 		var bannerrect = document.createElementNS(XMLNS, "rect");
-		bannerrect.setAttribute("height", (VIEWPORTHEIGHT_BLOCKS * BLOCKSIZE_PX / 5) + "px");
-		bannerrect.setAttribute("width", (VIEWPORTWIDTH_BLOCKS * BLOCKSIZE_PX * 3/4) + "px");
-		bannerrect.setAttribute("x", (SCREENSIZE_PX/2 - getSVGNumber(bannerrect, "width")/2) + "px");
-		bannerrect.setAttribute("y", (SCREENSIZE_PX/2 - getSVGNumber(bannerrect, "height")/2) + "px");
 		bannerrect.setAttribute("fill", "lightgray");
 		bannerrect.setAttribute("stroke-width", "2px");
 		bannerrect.setAttribute("stroke", "black");
@@ -133,11 +203,10 @@ class TetrisGame {
 		bannertext.setAttribute("font-size", "24pt");
 		bannertext.setAttribute("font-family", "monospace");
 		if (color != undefined) {
-			
+			bannertext.setAttribute("fill", color);
 		}
 		bannertext.setAttribute("x", (SCREENSIZE_PX/2) + "px");
-		var hgt = bannertext.getBBox()["height"];
-		bannertext.setAttribute("y", (SCREENSIZE_PX/2 + hgt/2) + "px");
+		bannertext.setAttribute("y", (SCREENSIZE_PX/2) + "px");
 
 		this.banner = document.createElementNS(XMLNS, "g");
 		this.banner.setAttribute("id", "banner");
@@ -146,6 +215,14 @@ class TetrisGame {
 
 		var p = document.getElementById("parentsvg");
 		p.appendChild(this.banner);
+
+		var bbox = bannertext.getBBox();
+		// console.log(bbox);
+
+		bannerrect.setAttribute("height", (bbox["height"] + 20) + "px");
+		bannerrect.setAttribute("width", (bbox["width"] + 20) + "px");
+		bannerrect.setAttribute("y", (bbox["y"] - 10) + "px");
+		bannerrect.setAttribute("x", (bbox["x"] - 10) + "px");	
 
 	}
 
@@ -159,7 +236,7 @@ class TetrisGame {
 				shape.move("down");
 			}
 			else {
-				game.shapeDone();
+				game.shapeDone(false);
 			}
 		}
 		// either move it down or detect that it's hit
@@ -169,51 +246,57 @@ class TetrisGame {
 	checkKey(e) { // note that "this" in this function is the caller
 		e = e || window.event; // catch undefined
 
+		console.log(new Error().stack);
+
 		var d, trial;
 
 		var game = this.game;
 
-		if (game.shapes.length > 0) {
-			var shape = game.activeShape;
+		if (game.active) {
 
-			switch (e.code) {
-				case "ArrowLeft":
-				case "KeyA":
-					d = "left";
-					break;
-				case "ArrowUp":
-				case "KeyW":
-				case "Space":
-					game.hardDrop();
-					break;
-				case "ArrowRight":
-				case "KeyD":
-					d = "right";
-					break;
-				case "ArrowDown":
-				case "KeyS":
-					d = "down";
-					break;
-				case "ShiftLeft":
-				case "KeyQ":
-					d = "ccw";
-					break;
-				case "ShiftRight":
-				case "KeyE":
-					d = "cw";
-					break;
-				case "Escape":
-					game.gameover();
-					break;
-				default:
-			}
+			if (game.shapes.length > 0) {
+				var shape = game.activeShape;
 
-			if (d != undefined) {
-				trial = shape.move(d, false); // don't execute move
-				if (!game.isBlocked(trial)) {
-					shape.move(d);
+				switch (e.code) {
+					case "ArrowLeft":
+					case "KeyA":
+						d = "left";
+						break;
+					case "ArrowUp":
+					case "KeyW":
+					case "Space":
+						game.hardDrop();
+						break;
+					case "ArrowRight":
+					case "KeyD":
+						d = "right";
+						break;
+					case "ArrowDown":
+					case "KeyS":
+						d = "down";
+						break;
+					case "ShiftLeft":
+					case "KeyQ":
+						d = "ccw";
+						break;
+					case "ShiftRight":
+					case "KeyE":
+						d = "cw";
+						break;
+					case "Escape":
+						game.gameover();
+						break;
+					default:
+				}
+
+				if (d != undefined) {
+					trial = shape.move(d, false); // don't execute move
+					if (!game.isBlocked(trial)) {
+						shape.move(d);
+					}
 				}
 			}
+
 		}
 	}
 
@@ -251,7 +334,7 @@ class TetrisGame {
 
 		this.activeShape.move([0, toMove]);
 
-		this.shapeDone();
+		this.shapeDone(true);
 		
 	}
 
@@ -263,18 +346,17 @@ class TetrisGame {
 
 		var waitms = 1000;
 
-		function removeFcn(game) {
-			game.activeShape = undefined;
-			game.removeLayers();
-			game.addShape();
+		if (!immediate) {
+			sleep(waitms);
 		}
 
-		if (immediate) {
-			removeFcn(this);
-		}
-		else {
-			setTimeout(removeFcn, waitms, this);
-		}
+		this.active = false;
+
+		this.activeShape = undefined;
+		this.removeLayers();
+		this.addShape();
+
+		this.active = true;
 	}
 
 	removeLayers() {
@@ -282,12 +364,10 @@ class TetrisGame {
 		var rows = [...Array(VIEWPORTHEIGHT_BLOCKS).keys()].map(d => d+1);
 
 		var rowsToRemove = rows.filter(r => this.rowFilled(r));
+		// console.log(rowsToRemove);
 		var boxelems = [...this.parent.getElementsByClassName("box")];
 
 		var boxesToRemove, boxesAbove, r;
-
-
-
 		// must go from lowest to highest # row or row #s will change
 		for (var i = 0; i < rowsToRemove.length; i++) {
 			r = rowsToRemove[i];
