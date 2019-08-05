@@ -344,20 +344,56 @@ class TetrisGame {
 
 	handleTouchEnd(e) {
 		// console.log("Touch end at (" + e.pageX + ", " + e.pageY + ")");
+
+		var game = window.game;
+
+		var shape = game.activeShape;
+
 		var dX = e.pageX - this.touchstartlocation[0];
 		var dY = e.pageY - this.touchstartlocation[1];
+
+		var swipelength = Math.sqrt(dX**2 + dY**2);
+
+		var minlength = 100; // min swipe length not considered a "tap"
 
 		var rawatan = Math.atan(-dY/dX) * 180 / Math.PI;
 		var angle;
 
-		if (dX > 0) {
-			angle = (rawatan + 360) % 360;
+		if (swipelength > minlength) {
+
+			if (dX > 0) {
+				angle = (rawatan + 360) % 360;
+			}
+			else {
+				angle = rawatan + 180;
+			}
+
+			if (angle < 45 || angle > 315) {
+				d = "right";
+			}
+			else if (angle > 45 && angle < 135) {
+				game.hardDrop();
+			}
+			else if (angle > 135 && angle < 225) {
+				d = "left";
+			}
+			else if (angle > 225 && angle < 315) {
+				d = "down";
+			}
+
 		}
 		else {
-			angle = rawatan + 180;
+			// this is a "tap"
+			d = "cw";
 		}
 
-		console.log("Swipe at: " + angle);
+		if (d != undefined) {
+			trial = shape.move(d, false); // don't execute move
+			if (!game.isBlocked(trial)) {
+				shape.move(d);
+			}
+		}
+		// console.log("Swipe at: " + angle.toFixed(3) + " deg");
 	}
 
 	isBlocked(newboxes) {
