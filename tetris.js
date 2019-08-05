@@ -281,7 +281,7 @@ class TetrisGame {
 	checkKey(e) { // note that "this" in this function is the caller
 		e = e || window.event; // catch undefined
 
-		console.log(e.detail);
+		// console.log(e.detail);
 
 		// console.log(new Error().stack);
 
@@ -351,6 +351,8 @@ class TetrisGame {
 
 		var dX = e.pageX - this.touchstartlocation[0];
 		var dY = e.pageY - this.touchstartlocation[1];
+
+		console.log("dX: " + dX + ", dY: " + dY);
 
 		var swipelength = Math.sqrt(dX**2 + dY**2);
 
@@ -474,8 +476,8 @@ class TetrisGame {
 			boxesToRemove.map(b => b.setAttribute("fill", "white"));
 			boxesAbove = boxelems.filter(b => parseInt(b.getAttribute("data-ycoord")) < r);
 
-			this.removeanddrop(boxesToRemove, boxesAbove);
-			// setTimeout(this.removeanddrop, 250, boxesToRemove, boxesAbove);
+			// this.removeanddrop(boxesToRemove, boxesAbove);
+			setTimeout(this.removeanddrop, 250, boxesToRemove, boxesAbove);
 		}
 
 		
