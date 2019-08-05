@@ -357,7 +357,7 @@ class TetrisGame {
 		var minlength = 100; // min swipe length not considered a "tap"
 
 		var rawatan = Math.atan(-dY/dX) * 180 / Math.PI;
-		var angle;
+		var angle, d;
 
 		if (swipelength > minlength) {
 
@@ -386,7 +386,7 @@ class TetrisGame {
 			// this is a "tap"
 			d = "cw";
 		}
-
+ 
 		if (d != undefined) {
 			trial = shape.move(d, false); // don't execute move
 			if (!game.isBlocked(trial)) {
