@@ -113,6 +113,47 @@ function makeViewport() {
 	prevg.appendChild(prevtitle);
 	p.appendChild(prevg);
 
+	var scorerect = document.createElementNS(XMLNS, "rect");
+	scorerect.setAttribute("id", "preview");
+	scorerect.setAttribute("height", (1 * BLOCKSIZE_PX) + "px");
+	scorerect.setAttribute("width", (5 * BLOCKSIZE_PX) + "px");
+
+	var scoreg = document.createElementNS(XMLNS, "g");
+	scoreg.setAttribute("id", "scoregroup");
+
+	var scorex = SCREENSIZE_PX / 4 - (VIEWPORTWIDTH_BLOCKS * BLOCKSIZE_PX) / 4;
+	// console.log(prevx);
+	scorerect.setAttribute("x", (scorex - getSVGNumber(scorerect, "width")/2) + "px");
+	scorerect.setAttribute("y", (SCREENSIZE_PX/2 - getSVGNumber(scorerect, "height")/2) + "px");
+	scorerect.setAttribute("fill", "gray");
+	scorerect.setAttribute("stroke", "black");
+	scorerect.setAttribute("stroke-width", "2px");
+
+	var scoretitle = document.createElementNS(XMLNS, "text");
+	scoretitle.setAttribute("text-anchor", "middle");
+	scoretitle.setAttribute("alignment-baseline", "bottom");
+	scoretitle.innerHTML = "Score:";
+	scoretitle.setAttribute("font-size", "16pt");
+	scoretitle.setAttribute("font-family", "monospace");
+	scoretitle.setAttribute("x", scorex + "px");
+	scoretitle.setAttribute("y", (getSVGNumber(scorerect, "y") - 10) + "px");
+
+	var scoretext = document.createElementNS(XMLNS, "text");
+	scoretext.setAttribute("id", "scoretext");
+	scoretext.setAttribute("text-anchor", "middle");
+	scoretext.setAttribute("alignment-baseline", "mathematical");
+	scoretext.innerHTML = "000000";
+	scoretext.setAttribute("fill", "white");
+	scoretext.setAttribute("font-size", "18pt");
+	scoretext.setAttribute("font-family", "monospace");
+	scoretext.setAttribute("x", scorex + "px");
+	scoretext.setAttribute("y", (SCREENSIZE_PX / 2) + "px");
+
+	scoreg.appendChild(scorerect);
+	scoreg.appendChild(scoretitle);
+	scoreg.appendChild(scoretext);
+	p.appendChild(scoreg);
+
 }
 
 class TetrisGame {
@@ -124,6 +165,11 @@ class TetrisGame {
 		this.activeShape = undefined;
 
 		this.active = true;
+
+		this.score = 0;
+		this.rowsremoved = 0;
+
+		this.shiftallowed = true;
 	}
 
 	addShape() {
@@ -140,6 +186,7 @@ class TetrisGame {
 		this.setPreview(this.nextshapenum);
 
 		var s = new Shape(shapenum, false);
+		this.currentshapenum = shapenum;
 		this.activeShape = s;
 		this.shapes.push(s);
 
@@ -299,7 +346,8 @@ class TetrisGame {
 					case "KeyA":
 						d = "left";
 						break;
-					case "Space":
+					case "ArrowUp":
+					case "KeyW":
 						game.hardDrop();
 						break;
 					case "ArrowRight":
@@ -314,10 +362,11 @@ class TetrisGame {
 					case "KeyQ":
 						d = "ccw";
 						break;
+					case "Space":
+						game.shiftShape();
+						break;
 					case "ShiftRight":
-					case "KeyW":
 					case "KeyE":
-					case "ArrowUp":
 						d = "cw";
 						break;
 					case "Escape":
@@ -436,6 +485,24 @@ class TetrisGame {
 		
 	}
 
+	shiftShape() {
+		if (this.shiftallowed) {
+			var current = this.shapes.pop();
+			var currentnum = current.shapenumber;
+			current.shapeg.remove();
+
+			this.addShape();
+
+			this.nextshapenum = currentnum;
+
+			// console.log(this.nextshapenum);
+			this.setPreview(this.nextshapenum);
+
+			this.shiftallowed = false;
+		}
+
+	}
+
 	shapeDone(immediate) {
 
 		if (immediate == undefined) {
@@ -452,9 +519,20 @@ class TetrisGame {
 
 		this.activeShape = undefined;
 		this.removeLayers();
+
+		var scoretext = document.getElementById("scoretext");
+
+		var scorelength = 6;
+
+		var scorestr = ("0".repeat(scorelength) + this.score).slice(-scorelength);
+
+		scoretext.innerHTML = scorestr;
+
 		this.addShape();
 
 		this.active = true;
+
+		this.shiftallowed = true;
 	}
 
 	removeLayers() {
@@ -464,6 +542,9 @@ class TetrisGame {
 		rows.reverse();
 
 		this.rowsToRemove = rows.filter(r => this.rowFilled(r));
+
+		this.score = this.score + 10 * this.rowsToRemove.length;
+		this.rowsremoved += this.rowsToRemove.length;
 		// console.log(this.rowsToRemove);
 		var boxelems = [...this.parent.getElementsByClassName("box")];
 
