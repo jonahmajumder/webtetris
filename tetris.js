@@ -113,13 +113,15 @@ function makeViewport() {
 	prevg.appendChild(prevtitle);
 	p.appendChild(prevg);
 
+	var scoreg = document.createElementNS(XMLNS, "g");
+	scoreg.setAttribute("id", "scoregroup");
+	p.appendChild(scoreg);
+
 	var scorerect = document.createElementNS(XMLNS, "rect");
+	scoreg.appendChild(scorerect);
 	scorerect.setAttribute("id", "preview");
 	scorerect.setAttribute("height", (1 * BLOCKSIZE_PX) + "px");
 	scorerect.setAttribute("width", (5 * BLOCKSIZE_PX) + "px");
-
-	var scoreg = document.createElementNS(XMLNS, "g");
-	scoreg.setAttribute("id", "scoregroup");
 
 	var scorex = SCREENSIZE_PX / 4 - (VIEWPORTWIDTH_BLOCKS * BLOCKSIZE_PX) / 4;
 	// console.log(prevx);
@@ -130,6 +132,7 @@ function makeViewport() {
 	scorerect.setAttribute("stroke-width", "2px");
 
 	var scoretitle = document.createElementNS(XMLNS, "text");
+	scoreg.appendChild(scoretitle);
 	scoretitle.setAttribute("text-anchor", "middle");
 	scoretitle.setAttribute("alignment-baseline", "bottom");
 	scoretitle.innerHTML = "Score:";
@@ -139,6 +142,7 @@ function makeViewport() {
 	scoretitle.setAttribute("y", (getSVGNumber(scorerect, "y") - 10) + "px");
 
 	var scoretext = document.createElementNS(XMLNS, "text");
+	scoreg.appendChild(scoretext);
 	scoretext.setAttribute("id", "scoretext");
 	scoretext.setAttribute("text-anchor", "middle");
 	scoretext.setAttribute("alignment-baseline", "mathematical");
@@ -146,13 +150,14 @@ function makeViewport() {
 	scoretext.setAttribute("fill", "white");
 	scoretext.setAttribute("font-size", "18pt");
 	scoretext.setAttribute("font-family", "monospace");
+	
 	scoretext.setAttribute("x", scorex + "px");
 	scoretext.setAttribute("y", (SCREENSIZE_PX / 2) + "px");
+	var bbox = scoretext.getBBox();
+	var ycorrection = (bbox.y + bbox.height/2) - SCREENSIZE_PX/2
+	scoretext.setAttribute("y", (SCREENSIZE_PX/2 - ycorrection) + "px");
 
-	scoreg.appendChild(scorerect);
-	scoreg.appendChild(scoretitle);
-	scoreg.appendChild(scoretext);
-	p.appendChild(scoreg);
+	// scoreg.appendChild(scoretext);
 
 }
 
