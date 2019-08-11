@@ -389,6 +389,7 @@ class TetrisGame {
 	handleTouchStart(e) {
 		// console.log("Touch start at (" + e.pageX + ", " + e.pageY + ")");
 		this.touchstartlocation = [e.pageX, e.pageY];
+		this.touchstarttime = new Date().getTime(); 
 	}
 
 	handleTouchEnd(e) {
@@ -400,6 +401,10 @@ class TetrisGame {
 
 		var dX = e.pageX - this.touchstartlocation[0];
 		var dY = e.pageY - this.touchstartlocation[1];
+
+		var time = new Date().getTime();
+		var touchduration = time - this.touchstarttime;
+		console.log("Duration: " + touchduration + " ms");
 
 		console.log("dX: " + dX + ", dY: " + dY);
 
@@ -434,8 +439,13 @@ class TetrisGame {
 
 		}
 		else {
-			// this is a "tap"
-			d = "cw";
+			if (touchduration < 500) {
+				// this is a "tap"
+				d = "cw";
+			}
+			else {
+				game.shiftShape();
+			}
 		}
  
 		if (d != undefined) {
