@@ -26,6 +26,15 @@ function sleep(ms) {
     while(new Date().getTime() < st + ms) {};
 }
 
+function inElem(coords, elem) {
+	var bbox = elem.getBBox();
+
+	var xRel = (coords[0] - bbox.x);
+	var yRel = (coords[1] - bbox.y);
+
+	return (xRel > 0 && xRel < bbox.width && yRel > 0 && yRel < bbox.height)
+}
+
 function makeViewport() {
 
 	var p = document.getElementById("parentsvg");
@@ -444,12 +453,11 @@ class TetrisGame {
 
 		}
 		else {
-			if (touchduration < 500) {
-				// this is a "tap"
-				d = "cw";
+			if (inElem(this.touchstartlocation, document.getElementById("preview"))) {
+				game.shiftShape();
 			}
 			else {
-				game.shiftShape();
+				d = "cw";
 			}
 		}
  
