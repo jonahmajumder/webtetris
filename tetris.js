@@ -581,7 +581,9 @@ class TetrisGame {
 			boxesAbove = boxelems.filter(b => parseInt(b.getAttribute("data-ycoord")) < r);
 
 			// this.removeanddrop(boxesToRemove, boxesAbove);
-			setTimeout(this.removeanddrop, 250, boxesToRemove, boxesAbove);
+			this.highlightremovedrow(r);
+			this.removeanddrop(boxesToRemove, boxesAbove);
+			
 		}
 
 		
@@ -593,7 +595,34 @@ class TetrisGame {
 		boxesAbove.map(b => b.setAttribute("data-ycoord", parseInt(b.getAttribute("data-ycoord"))+1));
 		boxesAbove.map(b => b.setAttribute("y", vpY((parseInt(b.getAttribute("data-ycoord"))-1) * BLOCKSIZE_PX) + "px"));
 		// console.log("remove and move executed");
-	}	
+	}
+
+	highlightremovedrow(row) {
+		var rowbbox = {
+			"x": vpX(0),
+			"y": vpY((row-1) * BLOCKSIZE_PX),
+			"width": VIEWPORTWIDTH_BLOCKS*BLOCKSIZE_PX,
+			"height": BLOCKSIZE_PX
+		}
+
+		var highlight = document.createElementNS(XMLNS, "rect");
+		highlight.setAttribute("x", rowbbox.x);
+		highlight.setAttribute("y", rowbbox.y);
+		highlight.setAttribute("width", rowbbox.width);
+		highlight.setAttribute("height", rowbbox.height);
+		highlight.setAttribute("fill", "white");
+		highlight.setAttribute("fill-opacity", 0.75);
+
+		var p = document.getElementById("parentsvg");
+		p.appendChild(highlight);
+
+		var timeout = 200;
+
+		setTimeout(rect => rect.remove(), timeout, highlight);
+
+		// console.log(rowbbox);
+
+	}
 
 }
 
