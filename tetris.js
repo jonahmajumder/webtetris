@@ -11,8 +11,7 @@ function getSVGNumber(item, property) {
 function parseAttr (attrStr) {
 	var re = /[0-9.]+/;
 	if (re.test(attrStr)) {
-		matchstr = attrStr.match(re)[0];
-		return parseFloat(matchstr);
+		return parseFloat(attrStr);
 	}
 	else {
 		console.error("No number found.");
@@ -616,14 +615,49 @@ class TetrisGame {
 		var p = document.getElementById("parentsvg");
 		p.appendChild(highlight);
 
-		var timeout = 200;
+		var fadetime = 300;
 
-		setTimeout(rect => rect.remove(), timeout, highlight);
+		fadeout(highlight, fadetime, 10)
 
 		// console.log(rowbbox);
 
 	}
 
+}
+
+function fadeout(elem, time, steps) {
+	if (steps == undefined) {
+		steps = 10;
+	}
+
+	if (elem.getAttribute("fill-opacity") == undefined) {
+		elem.setAttribute("fill-opacity", 1);
+	}
+
+	var initial = getSVGNumber(elem, "fill-opacity");
+	var fillstep = initial / steps;
+	var timestep = time / steps;
+
+	// console.log("fillstep: " + fillstep);
+
+	decreaseiteratively(elem, fillstep, timestep);
+}
+
+function decreaseiteratively(elem, amount, waittime) {
+	if (getSVGNumber(elem, "fill-opacity") > 0) {
+		setTimeout(
+			function(elem) {
+				// console.log("current: " + getSVGNumber(elem, "fill-opacity"));
+				// console.log("new: " + (getSVGNumber(elem, "fill-opacity")-amount));
+				elem.setAttribute("fill-opacity", getSVGNumber(elem, "fill-opacity")-amount);
+				decreaseiteratively(elem, amount, waittime);
+			},
+			waittime, elem);
+	}
+	else {
+		// console.log("removing");
+		elem.remove();
+	}
 }
 
 function vpX(x) {
