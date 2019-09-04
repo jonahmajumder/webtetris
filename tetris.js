@@ -183,6 +183,8 @@ class TetrisGame {
 		this.rowsremoved = 0;
 
 		this.shiftallowed = true;
+
+		this.timerFreqHz = 1.0;
 	}
 
 	addShape() {
@@ -259,7 +261,7 @@ class TetrisGame {
 
 	startgame() {
 		// console.log(this.vp);
-		var timerT = 1000; // ms
+		var timerT = 1000.0 / this.timerFreqHz; // ms
 		window.game = this;
 
 		if (!ISMOBILE) {
@@ -270,6 +272,36 @@ class TetrisGame {
 			window.addEventListener("touchend", this.handleTouchEnd);
 		}
 		this.addShape();
+
+		this.timer = setInterval(this.timerFunction, timerT);
+	}
+
+	speedup() {
+		clearInterval(this.timer);
+
+		var dbfactor = 10**0.1;
+		this.timerFreqHz *= dbfactor;
+
+
+		var timerT = 1000.0 / this.timerFreqHz;
+		this.timer = setInterval(this.timerFunction, timerT);
+
+	}
+
+	resume() {
+		document.getElementById("banner").remove();
+
+		// console.log(this.vp);
+		var timerT = 1000.0 / this.timerFreqHz;; // ms
+		window.game = this;
+
+		if (!ISMOBILE) {
+			window.onkeydown = this.checkKey;
+		}
+		else {
+			window.addEventListener("touchstart", this.handleTouchStart);
+			window.addEventListener("touchend", this.handleTouchEnd);
+		}
 
 		this.timer = setInterval(this.timerFunction, timerT);
 	}
