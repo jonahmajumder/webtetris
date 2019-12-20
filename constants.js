@@ -5,7 +5,24 @@ function getScreenSize() {
 	return Math.min(window.innerWidth, window.innerHeight)-20;
 }
 
+var LEVELCOLORS = [
+	"white",
+	"red",
+	"blue",
+	"green",
+	"yellow",
+	"brown",
+	"orange",
+	"purple",
+	"navy",
+	"grey"
+];
+
+var N_COLORS = LEVELCOLORS.length;
+
 var SCREENSIZE_PX = getScreenSize();
+
+var ROWS_PER_LEVEL = 20;
 
 var BLOCKSIZE_FACTOR = 23;
 

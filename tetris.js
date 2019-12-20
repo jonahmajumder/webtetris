@@ -46,7 +46,7 @@ function makeViewport() {
 	fullarea.setAttribute("height", "100%");
 	fullarea.setAttribute("fill", "white");
 	fullarea.setAttribute("stroke", "black");
-	fullarea.setAttribute("stroke-width", "3px");
+	fullarea.setAttribute("stroke-width", "2px");
 	p.appendChild(fullarea);
 
 	var vp_pad = 2;
@@ -72,6 +72,7 @@ function makeViewport() {
 	vp.setAttribute("fill", "gray");
 
 	var bkg = document.createElementNS(XMLNS, "rect");
+	bkg.setAttribute("id", "vpbkg");
 	bkg.setAttribute("height", (getSVGNumber(vp, "height") + 2*vp_pad) + "px");
 	bkg.setAttribute("width", (getSVGNumber(vp, "width") + 2*vp_pad) + "px");
 	bkg.setAttribute("x", (getSVGNumber(vp, "x") - vp_pad) + "px");
@@ -127,7 +128,7 @@ function makeViewport() {
 
 	var scorerect = document.createElementNS(XMLNS, "rect");
 	scoreg.appendChild(scorerect);
-	scorerect.setAttribute("id", "preview");
+	scorerect.setAttribute("id", "score");
 	scorerect.setAttribute("height", (1 * BLOCKSIZE_PX) + "px");
 	scorerect.setAttribute("width", (5 * BLOCKSIZE_PX) + "px");
 
@@ -165,14 +166,76 @@ function makeViewport() {
 	var ycorrection = (bbox.y + bbox.height/2) - SCREENSIZE_PX/2
 	scoretext.setAttribute("y", (SCREENSIZE_PX/2 - ycorrection) + "px");
 
+	var levelg = document.createElementNS(XMLNS, "g");
+	levelg.setAttribute("id", "levelgroup");
+	p.appendChild(levelg);
+
+
+	var leveltext = document.createElementNS(XMLNS, "text");
+	leveltext.setAttribute("id", "leveltext");
+	leveltext.setAttribute("text-anchor", "middle");
+	leveltext.setAttribute("alignment-baseline", "mathematical");
+	leveltext.innerHTML = "0";
+	leveltext.setAttribute("fill", "black");
+	leveltext.setAttribute("font-size", "80pt");
+	leveltext.setAttribute("font-family", "monospace");
+
+	leveltext.setAttribute("x", scorex + "px");
+	leveltext.setAttribute("y", (SCREENSIZE_PX / 5) + "px");
+	levelg.appendChild(leveltext);
+
+	var lhgt = leveltext.getBBox()["height"];
+	var ly = leveltext.getBBox()["y"];
+
+	var levellabel = document.createElementNS(XMLNS, "text");
+	levellabel.setAttribute("id", "levellabel");
+	levellabel.setAttribute("text-anchor", "middle");
+	levellabel.setAttribute("alignment-baseline", "mathematical");
+	levellabel.innerHTML = "Level";
+	levellabel.setAttribute("fill", "black");
+	levellabel.setAttribute("font-size", "24pt");
+	levellabel.setAttribute("font-family", "monospace");
+
+	levellabel.setAttribute("x", scorex + "px");
+	levellabel.setAttribute("y", ly + "px");
+	levelg.appendChild(levellabel);
+
+	var leveltogo = document.createElementNS(XMLNS, "text");
+	leveltogo.setAttribute("id", "leveltogo");
+	leveltogo.setAttribute("text-anchor", "middle");
+	leveltogo.setAttribute("alignment-baseline", "mathematical");
+	leveltogo.innerHTML = "To Go: 20";
+	leveltogo.setAttribute("fill", "black");
+	leveltogo.setAttribute("font-size", "18pt");
+	leveltogo.setAttribute("font-family", "monospace");
+
+	leveltogo.setAttribute("x", scorex + "px");
+	leveltogo.setAttribute("y", (ly + lhgt) + "px");
+	levelg.appendChild(leveltogo);
+
+
 	// scoreg.appendChild(scoretext);
 
+}
+
+function copydims(tocopy) {
+	var elem = document.createElementNS(XMLNS, "rect");
+
+	var bbox = tocopy.getBBox();
+	attrs = ["x", "y", "width", "height"];
+	for (var i = 0; i < attrs.length; i++) {
+		elem.setAttribute(attrs[i], bbox[attrs[i]]);
+	}
+	return elem;
 }
 
 class TetrisGame {
 	constructor() {
 		this.vp = document.getElementById("viewport");
 		this.parent = document.getElementById("parentsvg");
+		this.bkg = document.getElementById("fullarea");
+		this.addmask();
+		this.setcolor("yellow");
 
 		this.shapes = [];
 		this.activeShape = undefined;
@@ -181,10 +244,54 @@ class TetrisGame {
 
 		this.score = 0;
 		this.rowsremoved = 0;
+		this.togo = ROWS_PER_LEVEL;
+		this.level = 1;
+		this.setlevel(this.level);
 
 		this.shiftallowed = true;
 
 		this.timerFreqHz = 1.0;
+	}
+
+	addmask() {
+		var m = document.createElementNS(XMLNS, "mask");
+		var maskId = "colormask";
+		m.setAttribute("id", maskId);
+		var attrs = ["x", "y", "width", "height"];
+
+		var maskrect = copydims(this.parent);
+		var viewmask = copydims(document.getElementById("vpbkg"));
+		var prevmask = copydims(document.getElementById("preview"));
+		var scoremask = copydims(document.getElementById("score"));
+		// var levelmask = copydims(document.getElementById("levellabel"));
+
+		maskrect.setAttribute("fill", "white");
+		viewmask.setAttribute("fill", "black");
+		prevmask.setAttribute("fill", "black");
+		scoremask.setAttribute("fill", "black");
+		// levelmask.setAttribute("fill", "black");
+
+		m.appendChild(maskrect);
+		m.appendChild(viewmask);
+		m.appendChild(prevmask);
+		m.appendChild(scoremask);
+		// m.appendChild(levelmask);
+
+		this.parent.appendChild(m);
+		// this.parent.setAttribute("mask", "url(#" + maskId + ")");
+		
+		this.colorrect = copydims(this.parent);
+		this.colorrect.setAttribute("fill", "white");
+		this.colorrect.setAttribute("fill-opacity", 0.25);
+		this.colorrect.setAttribute("id", "colorrect");
+		this.colorrect.setAttribute("mask", "url(#" + maskId + ")");
+		this.parent.appendChild(this.colorrect);
+
+		// now make a rect over eveything and give it this mask!!
+	}
+
+	setcolor(color) {
+		this.colorrect.setAttribute("fill", color);
 	}
 
 	addShape() {
@@ -274,6 +381,23 @@ class TetrisGame {
 		this.addShape();
 
 		this.timer = setInterval(this.timerFunction, timerT);
+	}
+
+	levelup() {
+		var newlevel = this.level + 1;
+		this.setlevel(newlevel);
+		this.level = newlevel;
+		this.speedup();
+	}
+
+	setlevel(level) {
+		document.getElementById("leveltext").innerHTML = level;
+		this.setcolor(LEVELCOLORS[(level - 1) % N_COLORS])
+	}
+
+	settogo(rows) {
+		var text = document.getElementById("leveltogo");
+		text.innerHTML = "To Go: " + rows;
 	}
 
 	speedup() {
@@ -568,24 +692,26 @@ class TetrisGame {
 		if (!immediate) {
 			sleep(waitms);
 		}
-
 		this.active = false;
 
 		this.activeShape = undefined;
 		this.removeLayers();
 
+		if (this.togo <= 0) {
+			this.togo += ROWS_PER_LEVEL;
+			this.levelup();
+		}
+
+		this.settogo(this.togo);
+
 		var scoretext = document.getElementById("scoretext");
-
 		var scorelength = 6;
-
 		var scorestr = ("0".repeat(scorelength) + this.score).slice(-scorelength);
-
 		scoretext.innerHTML = scorestr;
 
 		this.addShape();
 
 		this.active = true;
-
 		this.shiftallowed = true;
 	}
 
@@ -596,9 +722,10 @@ class TetrisGame {
 		rows.reverse();
 
 		this.rowsToRemove = rows.filter(r => this.rowFilled(r));
-
-		this.score = this.score + 10 * this.rowsToRemove.length;
+		// SCORE ADDITION HERE
+		this.score = this.score + 10 * this.rowsToRemove.length * this.level;
 		this.rowsremoved += this.rowsToRemove.length;
+		this.togo -= this.rowsToRemove.length;
 		// console.log(this.rowsToRemove);
 		var boxelems = [...this.parent.getElementsByClassName("box")];
 
